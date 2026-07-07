@@ -42,12 +42,9 @@
 <p><strong>VLA 不是不强，而是没被用对。</strong></p>
 </blockquote>
 <p>Harness VLA 不训练一个新的 VLA，也不在部署时扩展一个越来越大的技能库。它把 frozen VLA 放进一个 memory-guided agentic harness 里，让 Codex / Claude Code 这样的 agent 学会如何使用 VLA：什么时候调用它，调用前如何调整机器人位姿和观察上下文，哪些阶段交给简单解析控制原语，如何把成功探索抽象成可复用的 Task Specific Memory。</p>
-<p>一句话概括：</p>
+<p>这套思路可以概括成两句话：</p>
 <blockquote>
 <p><strong>Harness VLA 把 frozen VLA 从端到端策略，变成了一个可调度、可观察、可组合的 contact-rich primitive。</strong></p>
-</blockquote>
-<p>更短一点：</p>
-<blockquote>
 <p><strong>simple primitives + frozen VLA + memory-guided agent = strong OOD generalization。</strong></p>
 </blockquote>
 <p><img alt="Harness VLA 框架总览图" src="wechat_assets/scheme_wechat.jpg" /></p>
@@ -111,8 +108,8 @@
 <blockquote>
 <p><strong>agent 学会了什么时候该用 VLA，什么时候该用 simple primitive，以及如何把二者组合起来。</strong></p>
 </blockquote>
-<p>论文里这句话很关键：Rather than expanding the skill library, the harness learns the operating range of these fixed primitives。</p>
-<p>不是扩技能库，而是学习固定原语的使用边界。</p>
+<p>论文强调的不是继续扩展 skill library，而是学习这些固定 primitives 的 operating range：每个 primitive 在什么状态下可靠，什么时候应该调用 VLA，什么时候应该交给解析控制。</p>
+<p>不是堆更多技能，而是把已有技能用到正确的位置。</p>
 <hr />
 <h2>03. 为什么 simple primitives 就够了</h2>
 <p>很多时候，机器人任务看起来复杂，是因为我们把整条轨迹都交给 VLA 了。</p>
@@ -127,7 +124,7 @@
 <li>在厨房任务里移动 base 到合适位置。</li>
 </ul>
 <p>这些动作不一定需要 VLA 来学。只要目标 grounding 对了，simple analytic primitives 就可以跨物体、跨场景复用。</p>
-<p>这也是 Harness VLA 最重要的卖点之一：</p>
+<p>这也是 Harness VLA 最关键的启发之一：</p>
 <blockquote>
 <p><strong>很多对 VLA 来说 OOD 的完整轨迹，对 simple primitive 来说只是几何连接。</strong></p>
 </blockquote>
@@ -148,7 +145,7 @@
 <p>Harness VLA 里还有一个非常重要的设计：Task Specific Memory。</p>
 <p>在 few-shot setting 中，agent 会先在一个 reference seed 上探索任务。这个阶段它有更宽松的预算，也可以通过交互尝试不同的 primitive composition：先移动到哪里，什么时候调用 <code>VLA ACT</code>，抓取后如何移动，什么时候释放，哪些姿态更稳定，哪些操作容易导致失败。</p>
 <p>一旦任务成功，agent 会把这个成功过程抽象成 memory。</p>
-<p>这里要注意：Task Specific Memory 不是简单把 seed-0 的坐标存下来，然后在新场景里 replay。</p>
+<p>关键在于，Task Specific Memory 不是简单把 seed-0 的坐标存下来，然后在新场景里 replay。</p>
 <p>它记录的是 primitive sequence 和任务结构，例如：</p>
 <pre><code class="language-json">{&quot;action&quot;: &quot;vla_act&quot;, &quot;prompt&quot;: &quot;grasp the black bowl&quot;, &quot;max_chunks&quot;: 2}
 {&quot;action&quot;: &quot;move_to&quot;, &quot;xyz&quot;: [0.12, -0.08, 0.92]}
@@ -191,11 +188,11 @@
 <p><img alt="Harness VLA 路径分解示意图" src="wechat_assets/abstract_figure_wechat.jpg" /></p>
 <p class="fig-caption">图 3：Harness VLA 的路径分解思想。部署扰动会把完整任务推向 OOD，但 planner 可以用 analytic primitives 做感知、移动和 staging，只把局部接触丰富阶段交给 frozen VLA。</p>
 
-<p>文章里可以把这个过程讲成：</p>
+<p>换句话说：</p>
 <blockquote>
 <p><strong>把 OOD 长程任务，拆成一串 VLA-compatible local contact attempts。</strong></p>
 </blockquote>
-<p>当然，这里的 “in-distribution” 更适合作为传播表达。论文更严谨的说法是：agent 通过 semantic re-grounding、pre-contact staging、viewpoint/pose adjustment，把当前目标转化成更适合 VLA 的 local observation/contact state。</p>
+<p>从机制上看，agent 通过 semantic re-grounding、pre-contact staging、viewpoint/pose adjustment，把当前目标转化成更适合 VLA 发挥作用的 local observation/contact state。</p>
 <p>这个思路解释了为什么同一个 frozen VLA，在 monolithic rollout 中容易失败，但放进 Harness VLA 里可以跨扰动、跨环境、跨 embodiment 获得更强泛化。</p>
 <p><img alt="接触阶段周围的解析分解" src="wechat_assets/c.png" /></p>
 <p class="fig-caption">图 4：接触丰富阶段周围的 analytic decomposition。VLA ACT 负责抓取、放入等局部接触动作；MOVE TO、RELEASE、NAVIGATE TO 等 primitive 负责检测、重定位、搬运和收尾。</p>
@@ -210,16 +207,13 @@
 <li>RoboTwin C2R：测试 bimanual clean-to-randomized transfer。</li>
 </ul>
 <p>先看 standard LIBERO。</p>
-<p>Harness VLA (CC) 达到 96.0% overall，而内部使用的 RLinf frozen VLA baseline 是 95.3%。这个结果说明，Harness VLA 没有牺牲 VLA 原本的标准任务能力。这里不需要宣传成 standard LIBERO 绝对 SOTA，因为 AtomVLA 是 97.0%；更准确的说法是：</p>
-<blockquote>
-<p><strong>Harness VLA preserves competitive standard LIBERO performance while exposing the frozen VLA through a controllable primitive interface.</strong></p>
-</blockquote>
+<p>Harness VLA (CC) 达到 96.0% overall，RLinf frozen VLA baseline 是 95.3%。这说明，把 frozen VLA 接入一个可控的 primitive interface 之后，系统并没有牺牲原本在标准任务上的能力，仍然保持了很强的 standard LIBERO 表现。</p>
 <p>真正能体现泛化优势的是 LIBERO-Pro。</p>
 <p>在 LIBERO-Pro 上，RLinf direct frozen VLA 的 overall success 是 50.0%。Harness VLA (Codex) 提升到 72.1%，Harness VLA (CC) 提升到 82.4%。</p>
 <blockquote>
 <p><strong>同一个 frozen VLA，从 50.0% 提升到 82.4%。</strong></p>
 </blockquote>
-<p>这个结果非常适合做文章卖点。它说明：问题不只是底层 VLA 强不强，而是有没有一个 agentic harness 把 semantic re-grounding、spatial re-binding 和 primitive composition 处理好。</p>
+<p>这个数字背后的信息很直接：问题不只是底层 VLA 强不强，而是有没有一个 agentic harness 把 semantic re-grounding、spatial re-binding 和 primitive composition 处理好。</p>
 <p>再看 RoboCasa365。</p>
 <p>RoboCasa365 更接近 household kitchen manipulation，有移动底盘、厨房 fixture、长程组合任务。RLDX-1 direct frozen VLA 的 weighted overall 是 30.0%。Harness VLA (Codex) 达到 55.4%，Harness VLA (CC) 达到 48.6%。</p>
 <p>分项来看：</p>
