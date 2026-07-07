@@ -5,43 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Frozen VLA + Simple Primitives，就能做强泛化机器人操作？Harness VLA 给出新答案</title>
   <style>
-    :root {
-      --text: #2b3340;
-      --muted: #64748b;
-      --blue: #2563eb;
-      --blue-deep: #1d4ed8;
-      --blue-soft: #eff6ff;
-      --line: #dbeafe;
-      --code-bg: #f8fafc;
-    }
-    html { background: #ffffff; }
-    body {
-      margin: 0;
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
-      line-height: 1.92;
-      letter-spacing: 0;
-      background: #ffffff;
-    }
-    main { max-width: 680px; margin: 0 auto; padding: 34px 18px 62px; background: #fff; box-sizing: border-box; }
-    h1 { font-size: 28px; line-height: 1.38; margin: 0 0 26px; color: #111827; font-weight: 800; }
-    h2 { margin: 48px 0 20px; padding: 8px 12px; border-left: 5px solid var(--blue); background: var(--blue-soft); color: var(--blue-deep); font-size: 21px; line-height: 1.45; font-weight: 800; }
-    h3 { margin: 30px 0 12px; color: #1e40af; font-size: 17px; font-weight: 800; }
-    p { margin: 15px 0; font-size: 16px; }
-    strong { color: var(--blue-deep); font-weight: 800; }
-    blockquote { margin: 20px 0; padding: 12px 16px; border-left: 4px solid var(--blue); background: #f8fbff; color: #1e3a8a; font-weight: 650; }
-    blockquote p { margin: 0; }
-    ul, ol { padding-left: 1.35em; margin: 14px 0; }
-    li { margin: 5px 0; }
-    hr { border: none; border-top: 1px solid #e2e8f0; margin: 34px 0; }
-    img { display: block; width: 100%; max-width: 100%; height: auto; margin: 22px auto 6px; border-radius: 6px; border: 1px solid #e5e7eb; box-sizing: border-box; }
-    .fig-caption { margin: 4px auto 24px; color: var(--muted); font-size: 13px; line-height: 1.6; text-align: center; }
-    pre { overflow-x: auto; margin: 18px 0; padding: 13px 15px; border: 1px solid #e2e8f0; border-radius: 6px; background: var(--code-bg); font-size: 13.5px; line-height: 1.65; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background: var(--code-bg); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.92em; }
-    pre code { padding: 0; background: transparent; }
-    a { color: var(--blue); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    @media (max-width: 640px) { main { padding: 26px 15px 52px; } h1 { font-size: 23px; } h2 { font-size: 18px; margin-top: 40px; } p { font-size: 15.5px; } }
+    :root { --text:#2b3340; --muted:#64748b; --blue:#2563eb; --blue-deep:#1d4ed8; --blue-soft:#eff6ff; --code-bg:#f8fafc; }
+    html { background:#fff; }
+    body { margin:0; color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif; line-height:1.92; letter-spacing:0; background:#fff; }
+    main { max-width:680px; margin:0 auto; padding:34px 18px 62px; background:#fff; box-sizing:border-box; }
+    h1 { font-size:28px; line-height:1.38; margin:0 0 26px; color:#111827; font-weight:800; }
+    h2 { margin:48px 0 20px; padding:8px 12px; border-left:5px solid var(--blue); background:var(--blue-soft); color:var(--blue-deep); font-size:21px; line-height:1.45; font-weight:800; }
+    h3 { margin:30px 0 12px; color:#1e40af; font-size:17px; font-weight:800; }
+    p { margin:15px 0; font-size:16px; }
+    strong { color:var(--blue-deep); font-weight:800; }
+    blockquote { margin:20px 0; padding:12px 16px; border-left:4px solid var(--blue); background:#f8fbff; color:#1e3a8a; font-weight:650; }
+    blockquote p { margin:0; }
+    ul,ol { padding-left:1.35em; margin:14px 0; }
+    li { margin:5px 0; }
+    hr { border:none; border-top:1px solid #e2e8f0; margin:34px 0; }
+    img { display:block; width:100%; max-width:100%; height:auto; margin:22px auto 6px; border-radius:6px; border:1px solid #e5e7eb; box-sizing:border-box; }
+    .fig-caption { margin:4px auto 24px; color:var(--muted); font-size:13px; line-height:1.6; text-align:center; }
+    pre { overflow-x:auto; margin:18px 0; padding:13px 15px; border:1px solid #e2e8f0; border-radius:6px; background:var(--code-bg); font-size:13.5px; line-height:1.65; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; background:var(--code-bg); border-radius:4px; padding:0.1em 0.35em; font-size:0.92em; }
+    pre code { padding:0; background:transparent; }
+    a { color:var(--blue); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    @media (max-width:640px) { main { padding:26px 15px 52px; } h1 { font-size:23px; } h2 { font-size:18px; margin-top:40px; } p { font-size:15.5px; } }
   </style>
 </head>
 <body>
@@ -65,7 +50,7 @@
 <blockquote>
 <p><strong>simple primitives + frozen VLA + memory-guided agent = strong OOD generalization。</strong></p>
 </blockquote>
-<p><img alt="Harness VLA 框架总览图" src="wechat_assets/scheme_wechat.jpg" /></p>
+<p><img alt="Harness VLA 框架总览图" src="wechat_assets/framework_scheme_primary_v2.jpg" /></p>
 <p class="fig-caption">图 1：Harness VLA 的整体框架。Agentic Planner 读取任务、观察和 memory，在固定 primitive library 中组合 VLA primitive 与 analytic primitives。</p>
 
 <p>上图展示了 Harness VLA 的核心思想：planner 不直接输出底层动作，而是在任务语言、RGB-D 观察、proprioception、Task Specific Memory 和 Global Memory 的条件下，调用一个固定 primitive library。VLA primitive 负责接触丰富的局部执行，analytic primitives 负责确定性移动、姿态、夹爪、导航和释放等非接触结构。</p>
