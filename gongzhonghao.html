@@ -6,90 +6,92 @@
   <title>Frozen VLA + Simple Primitives，就能做强泛化机器人操作？Harness VLA 给出新答案</title>
   <style>
     :root {
-      --text: #1f2933;
+      --text: #2b3340;
       --muted: #64748b;
       --blue: #2563eb;
+      --blue-deep: #1d4ed8;
       --blue-soft: #eff6ff;
       --line: #dbeafe;
       --code-bg: #f8fafc;
     }
-    html { background: #f3f6fb; }
+    html { background: #ffffff; }
     body {
       margin: 0;
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
-      line-height: 1.85;
+      line-height: 1.92;
       letter-spacing: 0;
+      background: #ffffff;
     }
     main {
-      max-width: 760px;
+      max-width: 680px;
       margin: 0 auto;
-      padding: 42px 22px 72px;
+      padding: 34px 18px 62px;
       background: #fff;
       box-sizing: border-box;
     }
     h1 {
-      font-size: 30px;
-      line-height: 1.32;
+      font-size: 28px;
+      line-height: 1.38;
       margin: 0 0 26px;
-      color: #0f172a;
+      color: #111827;
       font-weight: 800;
     }
     h2 {
-      margin: 54px 0 22px;
-      padding: 10px 14px;
+      margin: 48px 0 20px;
+      padding: 8px 12px;
       border-left: 5px solid var(--blue);
       background: var(--blue-soft);
-      color: #1d4ed8;
-      font-size: 22px;
+      color: var(--blue-deep);
+      font-size: 21px;
       line-height: 1.45;
       font-weight: 800;
     }
     h3 {
-      margin: 34px 0 14px;
+      margin: 30px 0 12px;
       color: #1e40af;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
     }
-    p {
-      margin: 16px 0;
-      font-size: 16px;
-    }
-    strong { color: #1d4ed8; font-weight: 800; }
+    p { margin: 15px 0; font-size: 16px; }
+    strong { color: var(--blue-deep); font-weight: 800; }
     blockquote {
-      margin: 22px 0;
-      padding: 14px 18px;
+      margin: 20px 0;
+      padding: 12px 16px;
       border-left: 4px solid var(--blue);
       background: #f8fbff;
       color: #1e3a8a;
-      font-weight: 600;
+      font-weight: 650;
     }
     blockquote p { margin: 0; }
-    ul, ol {
-      padding-left: 1.35em;
-      margin: 16px 0;
-    }
-    li { margin: 6px 0; }
-    hr {
-      border: none;
-      border-top: 1px solid #e2e8f0;
-      margin: 38px 0;
-    }
+    ul, ol { padding-left: 1.35em; margin: 14px 0; }
+    li { margin: 5px 0; }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 34px 0; }
     img {
       display: block;
+      width: 100%;
       max-width: 100%;
       height: auto;
-      margin: 22px auto 8px;
+      margin: 22px auto 6px;
       border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      box-sizing: border-box;
+    }
+    .fig-caption {
+      margin: 4px auto 24px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
     }
     pre {
       overflow-x: auto;
       margin: 18px 0;
-      padding: 14px 16px;
+      padding: 13px 15px;
       border: 1px solid #e2e8f0;
       border-radius: 6px;
       background: var(--code-bg);
-      font-size: 14px;
+      font-size: 13.5px;
       line-height: 1.65;
     }
     code {
@@ -103,9 +105,9 @@
     a { color: var(--blue); text-decoration: none; }
     a:hover { text-decoration: underline; }
     @media (max-width: 640px) {
-      main { padding: 28px 16px 54px; }
-      h1 { font-size: 24px; }
-      h2 { font-size: 19px; margin-top: 42px; }
+      main { padding: 26px 15px 52px; }
+      h1 { font-size: 23px; }
+      h2 { font-size: 18px; margin-top: 40px; }
       p { font-size: 15.5px; }
     }
   </style>
@@ -131,7 +133,9 @@
 <blockquote>
 <p><strong>simple primitives + frozen VLA + memory-guided agent = strong OOD generalization。</strong></p>
 </blockquote>
-<p><img alt="Harness VLA 总览图" src="HarnessVLA/figures/Abstract_figure.png" /></p>
+<p><img alt="Harness VLA 总览图" src="wechat_assets/abstract_figure_wechat.jpg" /></p>
+<p class="fig-caption">图 1：Harness VLA 的核心思想：用 analytic primitive 连接非接触阶段，让 VLA 只负责 contact-rich 局部操作。</p>
+
 <p>上图展示了 Harness VLA 的核心思想：planner 不直接输出底层动作，而是在任务语言、RGB-D 观察、proprioception、Task Specific Memory 和 Global Memory 的条件下，调用一个固定 primitive library。VLA primitive 负责接触丰富的局部执行，analytic primitives 负责确定性移动、姿态、夹爪、导航和释放等非接触结构。</p>
 <h2>论文资源</h2>
 <ul>
@@ -158,12 +162,9 @@
 </ul>
 <p>在这些场景下，端到端 VLA 经常会暴露一个问题：它可能学会了“熟悉轨迹”，但没有稳健地学会“当前任务绑定”。</p>
 <p>论文中 LIBERO-Pro 的可视化例子很直观。在 task-perturbed OBJECT-PRO 中，视觉场景看起来和标准任务很像，但指令已经把目标重定向了；RLinf 这样的 frozen VLA 仍然可能重复标准任务行为。在 swap-perturbed GOAL-PRO 中，物体布局发生变化，VLA 也可能继续朝训练时熟悉的区域移动。</p>
-<p><img alt="OBJECT-PRO 对比：标准任务、扰动下 frozen VLA、Harness VLA" src="HarnessVLA/figures/object_t4_std.png" /></p>
-<p><img alt="OBJECT-PRO frozen VLA 扰动结果" src="HarnessVLA/figures/object_t4_pi0pert.png" /></p>
-<p><img alt="OBJECT-PRO Harness VLA 扰动结果" src="HarnessVLA/figures/object_t4_hybpert.png" /></p>
-<p><img alt="GOAL-PRO 标准任务" src="HarnessVLA/figures/goal_t2_std.png" /></p>
-<p><img alt="GOAL-PRO frozen VLA 扰动结果" src="HarnessVLA/figures/goal_t2_pi0pert.png" /></p>
-<p><img alt="GOAL-PRO Harness VLA 扰动结果" src="HarnessVLA/figures/goal_t2_hybpert.png" /></p>
+<p><img alt="LIBERO-Pro 扰动对比：frozen VLA vs Harness VLA" src="wechat_assets/libero_pro_comparison_wechat.jpg" /></p>
+<p class="fig-caption">图 2：LIBERO-Pro 中的语义重定向和空间变化。Frozen VLA 容易重复训练时行为，Harness VLA 通过 planner 重新 grounding 当前目标。</p>
+
 <p>这说明一个关键问题：</p>
 <blockquote>
 <p><strong>VLA 的 contact skill 很强，但不应该让它独自承担语言理解、目标绑定、空间重定位和长程组合。</strong></p>
@@ -188,7 +189,9 @@
 <li><code>VLA ACT</code>：调用 frozen VLA，执行局部 contact-rich 操作。</li>
 </ul>
 <p>也就是说，VLA 不再是一个 monolithic trajectory policy，而是变成了一个 contact specialist。</p>
-<p><img alt="Harness VLA 框架图" src="HarnessVLA/figures/scheme.png" /></p>
+<p><img alt="Harness VLA 框架图" src="wechat_assets/scheme_wechat.jpg" /></p>
+<p class="fig-caption">图 3：Harness VLA 框架。Planner 读取观察、任务语言和 memory，在固定 primitive library 中选择动作。</p>
+
 <p>这张框架图里最值得注意的是：planner 不只是看当前图像和语言，它还会读取 Task Specific Memory 和 Global Memory。前者记录某个任务在参考 seed 上成功得到的 primitive composition skeleton，后者记录跨任务的 success rules 和 failure models。</p>
 <p>因此 Harness VLA 的关键不是“多了一个 VLA primitive”这么简单，而是：</p>
 <blockquote>
@@ -344,9 +347,9 @@
 <p>Harness VLA 不把 VLA 当成一次性黑盒 controller。每次 <code>VLA ACT</code> 都是 planner 选择的局部 contact attempt，其成败很大程度取决于调用前的 staging。</p>
 <p>planner 可以先用 analytic primitives 调整机器人到更合适的 pre-contact pose，再调用 VLA。如果局部接触状态不理想，agent 可以根据新的 observation 重新定位和调整，再决定下一步。</p>
 <p>论文 Figure 4 通过限制每个 episode 允许的 VLA primitive invocation 数量，展示了 staged VLA invocation 的作用：少量 planner-selected invocations 就已经超过 frozen-policy baseline，更多 invocations 在更长或更 contact-heavy 的任务中继续提升，最终接近 full harness performance。</p>
-<p><img alt="LIBERO-Pro staged VLA invocation 分析" src="HarnessVLA/figures/exp_analysis/vla_invoke_success.png" /></p>
-<p><img alt="RoboCasa365 staged VLA invocation 分析" src="HarnessVLA/figures/exp_analysis/robocasa_vla_invoke.png" /></p>
-<p><img alt="RoboTwin C2R staged VLA invocation 分析" src="HarnessVLA/figures/exp_analysis/robotwin_vla_invoke.png" /></p>
+<p><img alt="staged VLA invocation 分析" src="wechat_assets/vla_invocation_montage_wechat.jpg" /></p>
+<p class="fig-caption">图 4：不同 benchmark 中，planner-selected VLA invocation 带来的成功率变化。VLA 不是连续控制器，而是被稀疏、局部地调用。</p>
+
 <p>这里的核心不是“连续让 VLA 控制整条轨迹”，而是：</p>
 <blockquote>
 <p><strong>VLA calls are sparse but staged, observed, diagnosed, and retryable.</strong></p>
@@ -364,7 +367,9 @@
 </ul>
 <p>一旦 VLA 建立了稳定接触，planner 就可以用 analytic primitives 完成搬运、释放或移动到下一个区域。遇到下一个 contact-rich phase 时，再调用 VLA。</p>
 <p>论文中的 task completion attribution 也能说明这种分工：</p>
-<p><img alt="任务完成归因：analytic primitive vs VLA primitive" src="HarnessVLA/figures/exp_analysis/all_finisher.png" /></p>
+<p><img alt="任务完成归因：analytic primitive vs VLA primitive" src="wechat_assets/all_finisher_wechat.jpg" /></p>
+<p class="fig-caption">图 5：成功任务最后由哪类 primitive 触发完成谓词。不同场景下，analytic primitive 和 VLA primitive 的分工不同。</p>
+
 <p>LIBERO-family 里，很多任务最终是在 analytic transport、release 或 repositioning 后触发完成谓词；RoboCasa365 和 RoboTwin C2R 中，更多任务的最终完成依赖 contact-rich 操作，因此 VLA primitive 终结任务的比例更高。</p>
 <p>这正说明：</p>
 <blockquote>
