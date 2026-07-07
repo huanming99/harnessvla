@@ -254,31 +254,18 @@
 </blockquote>
 <p>Harness VLA 的强点就在于，它不是固定偏向某一边，而是让 agent 学会二者的分工。</p>
 <hr />
-<h2>06. 和现有 agentic VLA 的区别</h2>
-<p>Harness VLA 很容易被误解成“又一个 VLA + planner 系统”，但它的定位其实更具体。</p>
-<p>它不是：</p>
-<ul>
-<li>训练一个新 VLA；</li>
-<li>finetune VLA；</li>
-<li>扩展大型 skill library；</li>
-<li>让 LLM 在部署时写新 primitive；</li>
-<li>把 VLA 当黑盒 end-to-end policy；</li>
-<li>用纯 analytic primitives 替代学习控制。</li>
-</ul>
-<p>它真正做的是：</p>
+<h2>06. 和普通 VLA + planner 系统的区别</h2>
+<p>Harness VLA 很容易被误解成“又一个 VLA + planner”。如果只是这样理解，会漏掉这篇论文最关键的点：它不是简单在 VLA 外面加一个高层任务分解器，而是在重新定义 VLA 在机器人系统里的使用接口。</p>
+<p>普通意义上的 VLA + planner 更像两层结构：planner 把长任务拆成若干语义子任务，VLA 接管某个子任务的连续执行。这里 planner 主要管“做什么”，VLA 仍然要自己处理“在哪里做、以什么姿态做、当前目标是否已经变了、接触前状态是否合适”。一旦布局、目标或语义绑定离开训练分布，高层 plan 看起来合理，底层 rollout 仍可能回到 VLA 在训练时熟悉的动作模式。</p>
+<p>Harness VLA 的分工更细。</p>
+<p>第一，VLA 被显式变成一个 <code>VLA ACT</code> primitive。它不再承担整段子任务，而是专注于 contact-rich phase 的局部控制。每次调用前，planner 都要结合当前 RGB-D observation、机器人状态和 memory，重新确定目标、接触区域和预接触位姿。</p>
+<p>第二，planner 不只是做语言层面的 task decomposition。它还负责 semantic re-grounding、spatial re-binding、staging、非接触移动和执行后的状态判断。也就是说，planner 不是简单“告诉 VLA 去做什么”，而是在把当前场景整理成更适合 VLA 发挥接触能力的局部状态。</p>
+<p>第三，Harness VLA 的 memory 学到的不是更多 skill，而是“怎么使用这套固定接口”。Task Specific Memory 记录某类任务中 primitive 的组织结构；Global Memory 记录跨任务的成功规则和失败模式。agent 复用的是操作规程和判断逻辑，而不是一串坐标或一个新增技能。</p>
+<p>所以它和普通 VLA + planner 的核心差异可以概括为：</p>
 <blockquote>
-<p><strong>固定一个小 primitive library，让 agent 在 few-shot memory 和 closed-loop execution 中学会如何组合 simple primitives 和 frozen VLA。</strong></p>
+<p><strong>普通 VLA + planner 是 planner 调用 VLA 完成子任务；Harness VLA 是 agent 学会把 frozen VLA 当作一个受控的 contact primitive 来使用。</strong></p>
 </blockquote>
-<p>这个区别很重要。</p>
-<p>很多 agentic robot 方法的扩展路径是增加工具、增加 API、增加技能。但工具越多，agent 越需要判断哪个技能有效、哪个技能安全、哪个技能能泛化。Harness VLA 反过来做：primitive library 固定，部署时不扩技能；agent 学的是 orchestration。</p>
-<p>这也是它可以被概括成：</p>
-<blockquote>
-<p><strong>learning to use frozen VLAs with simple primitives。</strong></p>
-</blockquote>
-<p>这种设计让论文的故事非常清楚：</p>
-<blockquote>
-<p>VLA 的 contact skill 已经很有价值；真正需要解决的是，如何把这个局部能力放进一个可靠、可组合、可迁移的执行系统里。</p>
-</blockquote>
+<p>这也是它“simple but effective”的地方：primitive library 很小，VLA 也不更新，但 planner 学会了如何在不同任务里重新 grounding、staging 和组合这些固定 primitive，把 frozen VLA 的局部接触能力转化成跨场景的泛化能力。</p>
 <hr />
 <h2>局限与展望</h2>
 <p>论文也没有把 Harness VLA 包装成万能系统。</p>
