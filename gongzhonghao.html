@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Frozen VLA + Simple Primitives，就能做强泛化机器人操作？Harness VLA 给出新答案</title>
+  <style>
+    :root {
+      --text: #1f2933;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --line: #dbeafe;
+      --code-bg: #f8fafc;
+    }
+    html { background: #f3f6fb; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.85;
+      letter-spacing: 0;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 42px 22px 72px;
+      background: #fff;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 30px;
+      line-height: 1.32;
+      margin: 0 0 26px;
+      color: #0f172a;
+      font-weight: 800;
+    }
+    h2 {
+      margin: 54px 0 22px;
+      padding: 10px 14px;
+      border-left: 5px solid var(--blue);
+      background: var(--blue-soft);
+      color: #1d4ed8;
+      font-size: 22px;
+      line-height: 1.45;
+      font-weight: 800;
+    }
+    h3 {
+      margin: 34px 0 14px;
+      color: #1e40af;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    p {
+      margin: 16px 0;
+      font-size: 16px;
+    }
+    strong { color: #1d4ed8; font-weight: 800; }
+    blockquote {
+      margin: 22px 0;
+      padding: 14px 18px;
+      border-left: 4px solid var(--blue);
+      background: #f8fbff;
+      color: #1e3a8a;
+      font-weight: 600;
+    }
+    blockquote p { margin: 0; }
+    ul, ol {
+      padding-left: 1.35em;
+      margin: 16px 0;
+    }
+    li { margin: 6px 0; }
+    hr {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 38px 0;
+    }
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 22px auto 8px;
+      border-radius: 6px;
+    }
+    pre {
+      overflow-x: auto;
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: var(--code-bg);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: var(--code-bg);
+      border-radius: 4px;
+      padding: 0.1em 0.35em;
+      font-size: 0.92em;
+    }
+    pre code { padding: 0; background: transparent; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media (max-width: 640px) {
+      main { padding: 28px 16px 54px; }
+      h1 { font-size: 24px; }
+      h2 { font-size: 19px; margin-top: 42px; }
+      p { font-size: 15.5px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+<h1>Frozen VLA + Simple Primitives，就能做强泛化机器人操作？Harness VLA 给出新答案</h1>
+<p>如果一个机器人已经学会了抓取、放置、开抽屉、按按钮、操作水龙头，它是不是就能稳定完成各种自然语言指令？</p>
+<p>过去两年，Vision-Language-Action Models，也就是 VLA，给了机器人学习领域一个很强的想象：直接把图像、语言和动作连起来，让模型从大规模机器人轨迹里学会操作。很多 VLA 在训练分布内已经表现得相当不错。它们能抓住物体，能把东西放进容器，也能完成一些接触丰富的动作。</p>
+<p>但一到真实部署，问题很快出现。</p>
+<p>目标物体换了位置，VLA 可能还会朝训练时熟悉的区域移动；任务语义被重定向，它可能仍然重复原来的行为；一个短技能本来能做，但需要和其它技能组合成长程任务时，整条 rollout 就开始变得不稳定。更麻烦的是，VLA 经常被当成一个端到端策略来使用：它不仅要负责接触控制，还要理解语言、绑定目标、处理空间变化、规划长程流程，甚至处理执行中的局部不稳定。</p>
+<p>这其实是在让一个模型承担太多事情。</p>
+<p>清华于超老师团队提出的 Harness VLA 想讲一个不同的故事：</p>
+<blockquote>
+<p><strong>VLA 不是不强，而是没被用对。</strong></p>
+</blockquote>
+<p>Harness VLA 不训练一个新的 VLA，也不在部署时扩展一个越来越大的技能库。它把 frozen VLA 放进一个 memory-guided agentic harness 里，让 Codex / Claude Code 这样的 agent 学会如何使用 VLA：什么时候调用它，调用前如何调整机器人位姿和观察上下文，哪些阶段交给简单解析控制原语，如何把成功探索抽象成可复用的 Task Specific Memory。</p>
+<p>一句话概括：</p>
+<blockquote>
+<p><strong>Harness VLA 把 frozen VLA 从端到端策略，变成了一个可调度、可观察、可组合的 contact-rich primitive。</strong></p>
+</blockquote>
+<p>更短一点：</p>
+<blockquote>
+<p><strong>simple primitives + frozen VLA + memory-guided agent = strong OOD generalization。</strong></p>
+</blockquote>
+<p><img alt="Harness VLA 总览图" src="HarnessVLA/figures/Abstract_figure.png" /></p>
+<p>上图展示了 Harness VLA 的核心思想：planner 不直接输出底层动作，而是在任务语言、RGB-D 观察、proprioception、Task Specific Memory 和 Global Memory 的条件下，调用一个固定 primitive library。VLA primitive 负责接触丰富的局部执行，analytic primitives 负责确定性移动、姿态、夹爪、导航和释放等非接触结构。</p>
+<h2>论文资源</h2>
+<ul>
+<li>论文链接：[占位符]</li>
+<li>项目主页：[占位符]</li>
+<li>GitHub：[占位符]</li>
+<li>Demo Video：[占位符]</li>
+<li>arXiv / OpenReview：[占位符]</li>
+<li>Hugging Face / Model / Data：[占位符]</li>
+</ul>
+<hr />
+<h2>01. VLA 不是不强，而是被要求做太多</h2>
+<p>VLA 的强项非常明确：局部、视觉条件下的 contact-rich control。</p>
+<p>抓取一个不规则物体，把物体放进一个容器，操作一个铰接物体，按按钮，打开门或抽屉，这些动作往往很难用纯手写控制器稳定实现。解析控制器可以规划一条路径，可以移动到一个三维点，可以打开夹爪，但真正接触那一刻，物体形状、摩擦、遮挡、姿态误差都会让规则方法变得脆弱。</p>
+<p>这正是 VLA 擅长的地方。它从轨迹数据里学到局部视觉和动作之间的对应关系，因此在训练分布附近，VLA 往往能给出很强的操作能力。</p>
+<p>但 VLA 的弱点也同样明显：当任务离开训练轨迹分布，它很容易出问题。</p>
+<p>比如：</p>
+<ul>
+<li>instruction redirection：语言指令把目标换成了另一个物体；</li>
+<li>goal re-binding：目标谓词或目标区域发生变化；</li>
+<li>spatial-layout shift：物体位置被交换或重新布局；</li>
+<li>long-horizon composition：多个短技能需要组合成更长任务；</li>
+<li>mobile 或 bimanual setting：需要 base staging、双臂协同或更复杂的空间准备。</li>
+</ul>
+<p>在这些场景下，端到端 VLA 经常会暴露一个问题：它可能学会了“熟悉轨迹”，但没有稳健地学会“当前任务绑定”。</p>
+<p>论文中 LIBERO-Pro 的可视化例子很直观。在 task-perturbed OBJECT-PRO 中，视觉场景看起来和标准任务很像，但指令已经把目标重定向了；RLinf 这样的 frozen VLA 仍然可能重复标准任务行为。在 swap-perturbed GOAL-PRO 中，物体布局发生变化，VLA 也可能继续朝训练时熟悉的区域移动。</p>
+<p><img alt="OBJECT-PRO 对比：标准任务、扰动下 frozen VLA、Harness VLA" src="HarnessVLA/figures/object_t4_std.png" /></p>
+<p><img alt="OBJECT-PRO frozen VLA 扰动结果" src="HarnessVLA/figures/object_t4_pi0pert.png" /></p>
+<p><img alt="OBJECT-PRO Harness VLA 扰动结果" src="HarnessVLA/figures/object_t4_hybpert.png" /></p>
+<p><img alt="GOAL-PRO 标准任务" src="HarnessVLA/figures/goal_t2_std.png" /></p>
+<p><img alt="GOAL-PRO frozen VLA 扰动结果" src="HarnessVLA/figures/goal_t2_pi0pert.png" /></p>
+<p><img alt="GOAL-PRO Harness VLA 扰动结果" src="HarnessVLA/figures/goal_t2_hybpert.png" /></p>
+<p>这说明一个关键问题：</p>
+<blockquote>
+<p><strong>VLA 的 contact skill 很强，但不应该让它独自承担语言理解、目标绑定、空间重定位和长程组合。</strong></p>
+</blockquote>
+<p>Harness VLA 的出发点就是重新分工。</p>
+<hr />
+<h2>02. Harness VLA：把 frozen VLA 变成 contact-rich primitive</h2>
+<p>Harness VLA 的做法不是重新训练 VLA，而是把 frozen VLA 包进一个 agentic manipulation loop。</p>
+<p>在这个系统里，所有动作都通过一个固定 primitive library 发出。planner 不能随便发明新技能，也不能直接输出低层 torques 或 action chunks。它只能根据当前观察、任务语言和 memory，选择一个 primitive，并用 JSON 格式传入参数。</p>
+<p>这个 primitive library 包括两类东西。</p>
+<p>第一类是 simple analytic primitives，例如：</p>
+<ul>
+<li><code>MOVE TO</code>：把末端移动到一个世界坐标目标；</li>
+<li><code>MOVE POSE</code>：同时调整位置和姿态；</li>
+<li><code>ROTATE WRIST</code> / <code>ROTATE PITCH</code>：调整腕部角度；</li>
+<li><code>SET GRIPPER</code>：打开或关闭夹爪；</li>
+<li><code>RELEASE</code>：释放物体；</li>
+<li><code>NAVIGATE TO</code> / <code>MOVE BASE</code>：在厨房等移动场景中调整底盘。</li>
+</ul>
+<p>第二类是唯一的 learned primitive：</p>
+<ul>
+<li><code>VLA ACT</code>：调用 frozen VLA，执行局部 contact-rich 操作。</li>
+</ul>
+<p>也就是说，VLA 不再是一个 monolithic trajectory policy，而是变成了一个 contact specialist。</p>
+<p><img alt="Harness VLA 框架图" src="HarnessVLA/figures/scheme.png" /></p>
+<p>这张框架图里最值得注意的是：planner 不只是看当前图像和语言，它还会读取 Task Specific Memory 和 Global Memory。前者记录某个任务在参考 seed 上成功得到的 primitive composition skeleton，后者记录跨任务的 success rules 和 failure models。</p>
+<p>因此 Harness VLA 的关键不是“多了一个 VLA primitive”这么简单，而是：</p>
+<blockquote>
+<p><strong>agent 学会了什么时候该用 VLA，什么时候该用 simple primitive，以及如何把二者组合起来。</strong></p>
+</blockquote>
+<p>论文里这句话很关键：Rather than expanding the skill library, the harness learns the operating range of these fixed primitives。</p>
+<p>不是扩技能库，而是学习固定原语的使用边界。</p>
+<hr />
+<h2>03. 为什么 simple primitives 就够了</h2>
+<p>很多时候，机器人任务看起来复杂，是因为我们把整条轨迹都交给 VLA 了。</p>
+<p>比如“把牛奶盒放进篮子”这个任务，如果让 VLA 端到端做，它需要同时完成目标识别、抓取、搬运、空间定位、放置和最终验证。但如果拆开看，真正困难的 contact-rich 阶段可能只有抓取和放置那一小段。</p>
+<p>中间大部分动作，其实是可解析的几何连接：</p>
+<ul>
+<li>从当前位置移动到目标物体附近；</li>
+<li>抓住物体后移动到篮子上方；</li>
+<li>调整高度；</li>
+<li>打开夹爪释放；</li>
+<li>移动到下一个区域；</li>
+<li>在厨房任务里移动 base 到合适位置。</li>
+</ul>
+<p>这些动作不一定需要 VLA 来学。只要目标 grounding 对了，simple analytic primitives 就可以跨物体、跨场景复用。</p>
+<p>这也是 Harness VLA 最重要的卖点之一：</p>
+<blockquote>
+<p><strong>很多对 VLA 来说 OOD 的完整轨迹，对 simple primitive 来说只是几何连接。</strong></p>
+</blockquote>
+<p>因此，Harness VLA 不是让 VLA 学会所有 object-to-object 的完整轨迹，而是让 VLA 只在真正需要 contact intelligence 的地方出场。非接触的移动、释放、姿态调整、导航，都交给更稳定的解析控制。</p>
+<p>这个思路非常 simple，但效果很强。</p>
+<p>论文附录里的 primitive usage statistics 也支持这个判断：</p>
+<ul>
+<li>在 LIBERO 中，analytic primitives 占 84.2%，<code>VLA ACT</code> 只占 15.8%；</li>
+<li>在 RoboCasa365 中，analytic primitives 占 64.7%，<code>VLA ACT</code> 占 35.3%；</li>
+<li>在 RoboTwin C2R 中，analytic primitives 占 52.6%，<code>VLA ACT</code> 占 47.4%。</li>
+</ul>
+<p>也就是说，frozen VLA 并没有被当成端到端控制器。它被稀疏调用，只负责关键 contact-rich 阶段。</p>
+<blockquote>
+<p><strong>接触交给 VLA，几何连接交给原语，组合交给 agent。</strong></p>
+</blockquote>
+<hr />
+<h2>04. Few-shot memory 学到的不是坐标，而是用法</h2>
+<p>Harness VLA 里还有一个非常重要的设计：Task Specific Memory。</p>
+<p>在 few-shot setting 中，agent 会先在一个 reference seed 上探索任务。这个阶段它有更宽松的预算，也可以通过交互尝试不同的 primitive composition：先移动到哪里，什么时候调用 <code>VLA ACT</code>，抓取后如何移动，什么时候释放，哪些姿态更稳定，哪些操作容易导致失败。</p>
+<p>一旦任务成功，agent 会把这个成功过程抽象成 memory。</p>
+<p>这里要注意：Task Specific Memory 不是简单把 seed-0 的坐标存下来，然后在新场景里 replay。</p>
+<p>它记录的是 primitive sequence 和任务结构，例如：</p>
+<pre><code class="language-json">{&quot;action&quot;: &quot;vla_act&quot;, &quot;prompt&quot;: &quot;grasp the black bowl&quot;, &quot;max_chunks&quot;: 2}
+{&quot;action&quot;: &quot;move_to&quot;, &quot;xyz&quot;: [0.12, -0.08, 0.92]}
+{&quot;action&quot;: &quot;release&quot;}
+</code></pre>
+<p>但部署时，旧坐标不会被死用。agent 会重新从当前 RGB-D 图像和 world map 中定位当前物体、目标区域、support surface 和 fixture。</p>
+<p>所以这套 memory 的核心可以概括成：</p>
+<blockquote>
+<p><strong>replay structure, re-ground geometry。</strong></p>
+</blockquote>
+<p>也就是：复用成功任务的结构，但重新绑定当前场景的几何。</p>
+<p>这和普通 demonstration replay 很不一样。普通 replay 容易被位置变化、物体布局变化、任务重定向打断；Harness VLA 的 Task Specific Memory 保存的是“怎么做这类任务”的程序骨架，而不是“在这个坐标做这个动作”的死轨迹。</p>
+<p>Global Memory 则进一步记录跨任务经验，例如：</p>
+<ul>
+<li>哪类 contact-rich phase 适合交给 VLA；</li>
+<li>哪些视觉接近其实是假成功；</li>
+<li>空抓后应该重新定位；</li>
+<li>哪些 primitive 使用方式容易失败；</li>
+<li>成功后应该用 benchmark predicate 而不是视觉猜测来确认。</li>
+</ul>
+<p>因此，few-shot 在 Harness VLA 里学到的不是低层策略参数，而是：</p>
+<blockquote>
+<p><strong>agent 如何使用 frozen VLA 和 simple primitives。</strong></p>
+</blockquote>
+<hr />
+<h2>05. 把 OOD 长程任务拆成 VLA-compatible 局部尝试</h2>
+<p>如果把整条任务看作一个端到端轨迹，很多部署场景对 VLA 来说都是 OOD。</p>
+<p>但 Harness VLA 的视角不同：整体 OOD 不代表每个局部阶段都 OOD。</p>
+<p>一个长程任务可以被拆成：</p>
+<ol>
+<li>读任务语言，确定当前目标；</li>
+<li>从 RGB-D/world map 中重新 grounding 目标物体和目标区域；</li>
+<li>用 analytic primitives 把机器人移动到合适的 pre-contact pose；</li>
+<li>在局部 contact-rich 阶段调用 <code>VLA ACT</code>；</li>
+<li>一旦建立稳定接触，用 analytic primitives 完成搬运、释放、导航或重新定位；</li>
+<li>进入下一个 contact-rich 阶段，再调用 VLA。</li>
+</ol>
+<p>这样一来，VLA 不需要理解完整长程任务。它只需要在 agent 准备好的局部上下文中，完成自己擅长的 contact-rich 操作。</p>
+<p>这就是 Harness VLA 所谓的 harness：不是改变 VLA 本身，而是改变 VLA 被调用的状态和边界。</p>
+<p>文章里可以把这个过程讲成：</p>
+<blockquote>
+<p><strong>把 OOD 长程任务，拆成一串 VLA-compatible local contact attempts。</strong></p>
+</blockquote>
+<p>当然，这里的 “in-distribution” 更适合作为传播表达。论文更严谨的说法是：agent 通过 semantic re-grounding、pre-contact staging、viewpoint/pose adjustment，把当前目标转化成更适合 VLA 的 local observation/contact state。</p>
+<p>这个思路解释了为什么同一个 frozen VLA，在 monolithic rollout 中容易失败，但放进 Harness VLA 里可以跨扰动、跨环境、跨 embodiment 获得更强泛化。</p>
+<hr />
+<h2>06. 三大泛化基准上的强结果</h2>
+<p>Harness VLA 的实验覆盖了几类不同压力的 benchmark：</p>
+<ul>
+<li>standard LIBERO：验证不会破坏原有 in-distribution 能力；</li>
+<li>LIBERO-Pro：测试 instruction-redirection 和 position-swap perturbations；</li>
+<li>RoboCasa365：测试 household kitchen manipulation、mobile staging、articulated fixtures 和 longer composite routines；</li>
+<li>RoboTwin C2R：测试 bimanual clean-to-randomized transfer。</li>
+</ul>
+<p>先看 standard LIBERO。</p>
+<p>Harness VLA (CC) 达到 96.0% overall，而内部使用的 RLinf frozen VLA baseline 是 95.3%。这个结果说明，Harness VLA 没有牺牲 VLA 原本的标准任务能力。这里不需要宣传成 standard LIBERO 绝对 SOTA，因为 AtomVLA 是 97.0%；更准确的说法是：</p>
+<blockquote>
+<p><strong>Harness VLA preserves competitive standard LIBERO performance while exposing the frozen VLA through a controllable primitive interface.</strong></p>
+</blockquote>
+<p>真正能体现泛化优势的是 LIBERO-Pro。</p>
+<p>在 LIBERO-Pro 上，RLinf direct frozen VLA 的 overall success 是 50.0%。Harness VLA (Codex) 提升到 72.1%，Harness VLA (CC) 提升到 82.4%。</p>
+<blockquote>
+<p><strong>同一个 frozen VLA，从 50.0% 提升到 82.4%。</strong></p>
+</blockquote>
+<p>这个结果非常适合做文章卖点。它说明：问题不只是底层 VLA 强不强，而是有没有一个 agentic harness 把 semantic re-grounding、spatial re-binding 和 primitive composition 处理好。</p>
+<p>再看 RoboCasa365。</p>
+<p>RoboCasa365 更接近 household kitchen manipulation，有移动底盘、厨房 fixture、长程组合任务。RLDX-1 direct frozen VLA 的 weighted overall 是 30.0%。Harness VLA (Codex) 达到 55.4%，Harness VLA (CC) 达到 48.6%。</p>
+<p>分项来看：</p>
+<ul>
+<li>Atomic-Seen：Harness VLA Codex 91.6%，CC 79.4%；</li>
+<li>Composite-Seen：Codex 56.3%，CC 47.5%；</li>
+<li>Composite-Unseen：Codex 13.8%，CC 15.0%。</li>
+</ul>
+<p>这说明 Harness VLA 不只适用于桌面任务，也能迁移到厨房长程操作。这里 simple primitives 的作用尤其明显：<code>NAVIGATE TO</code> 和 <code>MOVE BASE</code> 可以帮助机器人进行 base staging，把 VLA 带到更合适的局部接触区域。</p>
+<p>最后是 RoboTwin C2R。</p>
+<p>RoboTwin C2R 是 bimanual clean-to-randomized transfer。这里 Task Specific Memory trace 来自 clean setting，评测直接在 randomized setting 上进行，没有 randomized-setting bootstrapping，也没有额外 finetuning。</p>
+<p>结果如下：</p>
+<ul>
+<li>GR00T-N1.7：20.7%；</li>
+<li>π0.5：47.9%；</li>
+<li>StarVLA：10.6%；</li>
+<li>Harness VLA (Codex)：58.0%；</li>
+<li>Harness VLA (CC)：58.4%。</li>
+</ul>
+<blockquote>
+<p><strong>在双臂随机化场景中，Harness VLA 达到 58.4%。</strong></p>
+</blockquote>
+<p>这说明同一套 “VLA contact primitive + simple analytic scaffold + memory-guided agent” 思路，不只适用于单臂桌面，也能扩展到双臂操作和 clean-to-randomized transfer。</p>
+<p>论文还提供了一个 zero-shot LIBERO-Pro Goal 结果，用来说明 Harness VLA 不只是靠 Task Specific Memory 复读。</p>
+<p>在没有 target-setting Task Specific Memory retrieval 的情况下：</p>
+<ul>
+<li>Pos-S：Cap-X 25.6%，Harness VLA (CC) 31.0%；</li>
+<li>Task-T：Cap-X 16.8%，Harness VLA (CC) 79.0%。</li>
+</ul>
+<p>这说明 planner 即使没有目标 setting 的 task-specific trace，也能从 live scene 和 task instruction 合成有效 primitive composition，尤其在 instruction redirection 上优势明显。</p>
+<hr />
+<h2>07. 效果为什么这么好</h2>
+<p>论文自己的机制分析可以总结成三条。</p>
+<h3>第一，planner-level semantic re-grounding</h3>
+<p>端到端 VLA 在扰动场景下容易重复训练时行为。它看到熟悉场景，可能就执行熟悉动作，即使当前任务语言已经改变。</p>
+<p>Harness VLA 把 semantic grounding 放到 planner 层：</p>
+<ul>
+<li>planner 解析任务描述；</li>
+<li>从 live RGB-D observation 中定位当前目标；</li>
+<li>用 analytic primitives 做 staging 和 repositioning；</li>
+<li>只在局部 contact-rich phase 调用 <code>VLA ACT</code>。</li>
+</ul>
+<p>这样，VLA 不再需要自己承担完整语义绑定。它只需要在 planner 给定的局部目标附近执行接触操作。</p>
+<h3>第二，planner-staged VLA invocation</h3>
+<p>Harness VLA 不把 VLA 当成一次性黑盒 controller。每次 <code>VLA ACT</code> 都是 planner 选择的局部 contact attempt，其成败很大程度取决于调用前的 staging。</p>
+<p>planner 可以先用 analytic primitives 调整机器人到更合适的 pre-contact pose，再调用 VLA。如果局部接触状态不理想，agent 可以根据新的 observation 重新定位和调整，再决定下一步。</p>
+<p>论文 Figure 4 通过限制每个 episode 允许的 VLA primitive invocation 数量，展示了 staged VLA invocation 的作用：少量 planner-selected invocations 就已经超过 frozen-policy baseline，更多 invocations 在更长或更 contact-heavy 的任务中继续提升，最终接近 full harness performance。</p>
+<p><img alt="LIBERO-Pro staged VLA invocation 分析" src="HarnessVLA/figures/exp_analysis/vla_invoke_success.png" /></p>
+<p><img alt="RoboCasa365 staged VLA invocation 分析" src="HarnessVLA/figures/exp_analysis/robocasa_vla_invoke.png" /></p>
+<p><img alt="RoboTwin C2R staged VLA invocation 分析" src="HarnessVLA/figures/exp_analysis/robotwin_vla_invoke.png" /></p>
+<p>这里的核心不是“连续让 VLA 控制整条轨迹”，而是：</p>
+<blockquote>
+<p><strong>VLA calls are sparse but staged, observed, diagnosed, and retryable.</strong></p>
+</blockquote>
+<p>也就是说，VLA 被稀疏调用，但每次调用都嵌在 agent 的观察、诊断、staging 和 primitive composition 里。</p>
+<h3>第三，analytic primitives isolate non-contact execution</h3>
+<p>解析原语不替代 VLA 做接触操作，而是负责接触前后那些更适合解析控制的结构：</p>
+<ul>
+<li>free-space transport；</li>
+<li>pre-contact staging；</li>
+<li>wrist/base reorientation；</li>
+<li>post-contact repositioning；</li>
+<li>release；</li>
+<li>navigation。</li>
+</ul>
+<p>一旦 VLA 建立了稳定接触，planner 就可以用 analytic primitives 完成搬运、释放或移动到下一个区域。遇到下一个 contact-rich phase 时，再调用 VLA。</p>
+<p>论文中的 task completion attribution 也能说明这种分工：</p>
+<p><img alt="任务完成归因：analytic primitive vs VLA primitive" src="HarnessVLA/figures/exp_analysis/all_finisher.png" /></p>
+<p>LIBERO-family 里，很多任务最终是在 analytic transport、release 或 repositioning 后触发完成谓词；RoboCasa365 和 RoboTwin C2R 中，更多任务的最终完成依赖 contact-rich 操作，因此 VLA primitive 终结任务的比例更高。</p>
+<p>这正说明：</p>
+<blockquote>
+<p><strong>任务越 contact-heavy，VLA 越重要；任务中非接触几何连接越多，simple primitives 越重要。</strong></p>
+</blockquote>
+<p>Harness VLA 的强点就在于，它不是固定偏向某一边，而是让 agent 学会二者的分工。</p>
+<hr />
+<h2>08. 和现有 agentic VLA 的区别</h2>
+<p>Harness VLA 很容易被误解成“又一个 VLA + planner 系统”，但它的定位其实更具体。</p>
+<p>它不是：</p>
+<ul>
+<li>训练一个新 VLA；</li>
+<li>finetune VLA；</li>
+<li>扩展大型 skill library；</li>
+<li>让 LLM 在部署时写新 primitive；</li>
+<li>把 VLA 当黑盒 end-to-end policy；</li>
+<li>用纯 analytic primitives 替代学习控制。</li>
+</ul>
+<p>它真正做的是：</p>
+<blockquote>
+<p><strong>固定一个小 primitive library，让 agent 在 few-shot memory 和 closed-loop execution 中学会如何组合 simple primitives 和 frozen VLA。</strong></p>
+</blockquote>
+<p>这个区别很重要。</p>
+<p>很多 agentic robot 方法的扩展路径是增加工具、增加 API、增加技能。但工具越多，agent 越需要判断哪个技能有效、哪个技能安全、哪个技能能泛化。Harness VLA 反过来做：primitive library 固定，部署时不扩技能；agent 学的是 orchestration。</p>
+<p>这也是它可以被概括成：</p>
+<blockquote>
+<p><strong>learning to use frozen VLAs with simple primitives。</strong></p>
+</blockquote>
+<p>或者更传播化一点：</p>
+<blockquote>
+<p><strong>simple but effective VLA harness。</strong></p>
+</blockquote>
+<p>这种设计让论文的故事非常清楚：</p>
+<blockquote>
+<p>VLA 的 contact skill 已经很有价值；真正需要解决的是，如何把这个局部能力放进一个可靠、可组合、可迁移的执行系统里。</p>
+</blockquote>
+<hr />
+<h2>局限与展望</h2>
+<p>论文也没有把 Harness VLA 包装成万能系统。</p>
+<p>当前框架还有几个限制。</p>
+<p>首先，高层 planner 和底层 VLA 之间的反馈 loop 仍然比较开放。VLA 的内部状态、失败原因和 contact quality 并没有被完全结构化地反馈给 planner。</p>
+<p>其次，系统目前没有通过环境奖励或人类偏好对 planner 和 VLA 进行 joint fine-tuning。未来如果能结合更 sample-efficient 的 reinforcement learning，例如 GRPO 一类方法，可能进一步提升复杂任务中的执行稳定性。</p>
+<p>最后，在高度杂乱、长程、多物体交互的场景里，细粒度图像 caption 和结构理解仍然是瓶颈。planner 需要更强的视觉结构描述，才能在复杂场景中做更可靠的 grounding 和 verification。</p>
+<p>但即便如此，Harness VLA 已经给出了一个很有启发的方向：</p>
+<blockquote>
+<p><strong>不要急着训练更大的 VLA，也不要急着堆更多技能。先让 agent 学会怎么用好已有的 frozen VLA。</strong></p>
+</blockquote>
+<hr />
+<h2>总结</h2>
+<p>Harness VLA 的核心卖点不是“VLA 更大”，也不是“agent 工具更多”。</p>
+<p>它的核心是：</p>
+<blockquote>
+<p><strong>用一个 memory-guided agent 学会如何正确调用 frozen VLA；再用少量 simple analytic primitives 把 VLA 擅长的局部 contact skills 组合起来，从而把 in-distribution 局部能力扩展成 out-of-distribution 全局泛化。</strong></p>
+</blockquote>
+<p>换句话说：</p>
+<blockquote>
+<p><strong>Harness VLA 不是让 VLA 变大，而是让 agent 学会把 VLA 用在它最擅长的位置。</strong></p>
+</blockquote>
+<p>这也是这篇论文最值得传播的地方。它没有选择继续堆模型、堆技能库，而是重新审视 VLA 的使用方式：contact-rich by VLA，geometry by primitives，composition by agent。</p>
+<p>简单，但有效。</p>
+  </main>
+</body>
+</html>
