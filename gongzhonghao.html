@@ -47,7 +47,7 @@
 <p><strong>Harness VLA 把 frozen VLA 从端到端策略，变成了一个可调度、可观察、可组合的 contact-rich primitive。</strong></p>
 <p><strong>simple primitives + frozen VLA + memory-guided agent = strong OOD generalization。</strong></p>
 </blockquote>
-<p><img alt="Harness VLA 框架总览图" src="wechat_assets/scheme_wechat.jpg" /></p>
+<p><img alt="Harness VLA 框架总览图" src="wechat_assets/scheme_wechat.png" /></p>
 <p class="fig-caption">图 1：Harness VLA 的整体框架。规划器基于任务、RGB-D 观测、本体感知和 memory，向固定 primitive library 发出结构化调用，组合 VLA primitive 与 analytic primitives。</p>
 
 <p>上图展示了 Harness VLA 的核心思想：planner 不直接输出底层动作，而是在任务语言、RGB-D 观察、proprioception、Task Specific Memory 和 Global Memory 的条件下，调用一个固定 primitive library。VLA primitive 负责接触丰富的局部执行，analytic primitives 负责确定性移动、姿态、夹爪、导航和释放等非接触结构。</p>
