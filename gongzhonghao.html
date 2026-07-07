@@ -31,7 +31,7 @@
 </head>
 <body>
   <main>
-<h1>Frozen VLA + Simple Primitives，就能做强泛化机器人操作？Harness VLA 给出新答案</h1>
+    <h1>Frozen VLA + Simple Primitives，就能做强泛化机器人操作？Harness VLA 给出新答案</h1>
 <p>如果一个机器人已经学会了抓取、放置、开抽屉、按按钮、操作水龙头，它是不是就能稳定完成各种自然语言指令？</p>
 <p>过去两年，Vision-Language-Action Models，也就是 VLA，给了机器人学习领域一个很强的想象：直接把图像、语言和动作连起来，让模型从大规模机器人轨迹里学会操作。很多 VLA 在训练分布内已经表现得相当不错。它们能抓住物体，能把东西放进容器，也能完成一些接触丰富的动作。</p>
 <p>但一到真实部署，问题很快出现。</p>
@@ -50,8 +50,8 @@
 <blockquote>
 <p><strong>simple primitives + frozen VLA + memory-guided agent = strong OOD generalization。</strong></p>
 </blockquote>
-<p><img alt="Harness VLA 框架总览图" src="wechat_assets/framework_scheme_primary_v2.jpg" /></p>
-<p class="fig-caption">图 1：Harness VLA 的整体框架。Agentic Planner 读取任务、观察和 memory，在固定 primitive library 中组合 VLA primitive 与 analytic primitives。</p>
+<p><img alt="Harness VLA 框架总览图" src="wechat_assets/scheme_wechat.jpg" /></p>
+<p class="fig-caption">图 1：Harness VLA 的整体框架。规划器基于任务、RGB-D 观测、本体感知和 memory，向固定 primitive library 发出结构化调用，组合 VLA primitive 与 analytic primitives。</p>
 
 <p>上图展示了 Harness VLA 的核心思想：planner 不直接输出底层动作，而是在任务语言、RGB-D 观察、proprioception、Task Specific Memory 和 Global Memory 的条件下，调用一个固定 primitive library。VLA primitive 负责接触丰富的局部执行，analytic primitives 负责确定性移动、姿态、夹爪、导航和释放等非接触结构。</p>
 <h2>论文资源</h2>
@@ -79,8 +79,8 @@
 </ul>
 <p>在这些场景下，端到端 VLA 经常会暴露一个问题：它可能学会了“熟悉轨迹”，但没有稳健地学会“当前任务绑定”。</p>
 <p>论文中 LIBERO-Pro 的可视化例子很直观。在 task-perturbed OBJECT-PRO 中，视觉场景看起来和标准任务很像，但指令已经把目标重定向了；RLinf 这样的 frozen VLA 仍然可能重复标准任务行为。在 swap-perturbed GOAL-PRO 中，物体布局发生变化，VLA 也可能继续朝训练时熟悉的区域移动。</p>
-<p><img alt="LIBERO-Pro 扰动对比：frozen VLA vs Harness VLA" src="wechat_assets/libero_pro_comparison_wechat.jpg" /></p>
-<p class="fig-caption">图 2：LIBERO-Pro 中的语义重定向和空间变化。Frozen VLA 容易重复训练时行为，Harness VLA 通过 planner 重新 grounding 当前目标。</p>
+<p><img alt="LIBERO-Pro 扰动示例" src="wechat_assets/a.png" /></p>
+<p class="fig-caption">图 2：LIBERO-Pro 扰动示例。视觉相似但目标被重定向、布局被交换时，RLinf 容易重复标准行为；Harness VLA 通过 planner 重新 grounding 目标，并在 staging 后调用 VLA ACT。</p>
 
 <p>这说明一个关键问题：</p>
 <blockquote>
@@ -106,10 +106,7 @@
 <li><code>VLA ACT</code>：调用 frozen VLA，执行局部 contact-rich 操作。</li>
 </ul>
 <p>也就是说，VLA 不再是一个 monolithic trajectory policy，而是变成了一个 contact specialist。</p>
-<p><img alt="Harness VLA 路径分解示意图" src="wechat_assets/abstract_figure_wechat.jpg" /></p>
-<p class="fig-caption">图 3：Harness VLA 的路径分解思想。Analytic primitives 处理非接触阶段，VLA 只在 contact-rich 局部阶段出场。</p>
-
-<p>这张框架图里最值得注意的是：planner 不只是看当前图像和语言，它还会读取 Task Specific Memory 和 Global Memory。前者记录某个任务在参考 seed 上成功得到的 primitive composition skeleton，后者记录跨任务的 success rules 和 failure models。</p>
+<p>这个系统里最值得注意的是：planner 不只是看当前图像和语言，它还会读取 Task Specific Memory 和 Global Memory。前者记录某个任务在参考 seed 上成功得到的 primitive composition skeleton，后者记录跨任务的 success rules 和 failure models。</p>
 <p>因此 Harness VLA 的关键不是“多了一个 VLA primitive”这么简单，而是：</p>
 <blockquote>
 <p><strong>agent 学会了什么时候该用 VLA，什么时候该用 simple primitive，以及如何把二者组合起来。</strong></p>
@@ -191,12 +188,18 @@
 </ol>
 <p>这样一来，VLA 不需要理解完整长程任务。它只需要在 agent 准备好的局部上下文中，完成自己擅长的 contact-rich 操作。</p>
 <p>这就是 Harness VLA 所谓的 harness：不是改变 VLA 本身，而是改变 VLA 被调用的状态和边界。</p>
+<p><img alt="Harness VLA 路径分解示意图" src="wechat_assets/abstract_figure_wechat.jpg" /></p>
+<p class="fig-caption">图 3：Harness VLA 的路径分解思想。部署扰动会把完整任务推向 OOD，但 planner 可以用 analytic primitives 做感知、移动和 staging，只把局部接触丰富阶段交给 frozen VLA。</p>
+
 <p>文章里可以把这个过程讲成：</p>
 <blockquote>
 <p><strong>把 OOD 长程任务，拆成一串 VLA-compatible local contact attempts。</strong></p>
 </blockquote>
 <p>当然，这里的 “in-distribution” 更适合作为传播表达。论文更严谨的说法是：agent 通过 semantic re-grounding、pre-contact staging、viewpoint/pose adjustment，把当前目标转化成更适合 VLA 的 local observation/contact state。</p>
 <p>这个思路解释了为什么同一个 frozen VLA，在 monolithic rollout 中容易失败，但放进 Harness VLA 里可以跨扰动、跨环境、跨 embodiment 获得更强泛化。</p>
+<p><img alt="接触阶段周围的解析分解" src="wechat_assets/c.png" /></p>
+<p class="fig-caption">图 4：接触丰富阶段周围的 analytic decomposition。VLA ACT 负责抓取、放入等局部接触动作；MOVE TO、RELEASE、NAVIGATE TO 等 primitive 负责检测、重定位、搬运和收尾。</p>
+
 <hr />
 <h2>06. 三大泛化基准上的强结果</h2>
 <p>Harness VLA 的实验覆盖了几类不同压力的 benchmark：</p>
@@ -263,15 +266,18 @@
 <h3>第二，planner-staged VLA invocation</h3>
 <p>Harness VLA 不把 VLA 当成一次性黑盒 controller。每次 <code>VLA ACT</code> 都是 planner 选择的局部 contact attempt，其成败很大程度取决于调用前的 staging。</p>
 <p>planner 可以先用 analytic primitives 调整机器人到更合适的 pre-contact pose，再调用 VLA。如果局部接触状态不理想，agent 可以根据新的 observation 重新定位和调整，再决定下一步。</p>
-<p>论文 Figure 4 通过限制每个 episode 允许的 VLA primitive invocation 数量，展示了 staged VLA invocation 的作用：少量 planner-selected invocations 就已经超过 frozen-policy baseline，更多 invocations 在更长或更 contact-heavy 的任务中继续提升，最终接近 full harness performance。</p>
-<p><img alt="staged VLA invocation 分析" src="wechat_assets/vla_invocation_montage_wechat.jpg" /></p>
-<p class="fig-caption">图 4：不同 benchmark 中，planner-selected VLA invocation 带来的成功率变化。VLA 不是连续控制器，而是被稀疏、局部地调用。</p>
+<p><img alt="自适应调用 VLA 的 rollout 示例" src="wechat_assets/b.png" /></p>
+<p class="fig-caption">图 5：自适应 VLA 调用（adaptive VLA invocation）的 rollout 示例。VLA 不是连续控制整条轨迹，而是由 planner 在 navigation、staging 和 verification 之间选择合适的局部接触尝试。</p>
+
+<p>论文中的 invocation analysis 通过限制每个 episode 允许的 VLA primitive invocation 数量，展示了 staged VLA invocation 的作用：少量 planner-selected invocations 就已经超过 frozen-policy baseline，更多 invocations 在更长或更 contact-heavy 的任务中继续提升，最终接近 full harness performance。</p>
+<p><img alt="staged VLA invocation 分析" src="wechat_assets/e.jpg" /></p>
+<p class="fig-caption">图 6：自适应 VLA 调用带来的成功率变化。前几次 planner-staged invocation 往往已经明显提升表现，之后逐渐接近完整 Harness VLA 性能，说明 VLA 调用有效但仍然稀疏。</p>
 
 <p>这里的核心不是“连续让 VLA 控制整条轨迹”，而是：</p>
 <blockquote>
-<p><strong>VLA calls are sparse but staged, observed, diagnosed, and retryable.</strong></p>
+<p><strong>VLA calls are sparse, staged, observed, and planner-selected.</strong></p>
 </blockquote>
-<p>也就是说，VLA 被稀疏调用，但每次调用都嵌在 agent 的观察、诊断、staging 和 primitive composition 里。</p>
+<p>也就是说，VLA 被稀疏调用，但每次调用都嵌在 agent 的观察、staging、verification 和 primitive composition 里。</p>
 <h3>第三，analytic primitives isolate non-contact execution</h3>
 <p>解析原语不替代 VLA 做接触操作，而是负责接触前后那些更适合解析控制的结构：</p>
 <ul>
@@ -284,8 +290,8 @@
 </ul>
 <p>一旦 VLA 建立了稳定接触，planner 就可以用 analytic primitives 完成搬运、释放或移动到下一个区域。遇到下一个 contact-rich phase 时，再调用 VLA。</p>
 <p>论文中的 task completion attribution 也能说明这种分工：</p>
-<p><img alt="任务完成归因：analytic primitive vs VLA primitive" src="wechat_assets/all_finisher_wechat.jpg" /></p>
-<p class="fig-caption">图 5：成功任务最后由哪类 primitive 触发完成谓词。不同场景下，analytic primitive 和 VLA primitive 的分工不同。</p>
+<p><img alt="任务完成归因：analytic primitive vs VLA primitive" src="wechat_assets/d.jpg" /></p>
+<p class="fig-caption">图 7：任务完成归因（task completion attribution）。LIBERO-family 更多由 analytic primitive 触发最终完成谓词；RoboCasa365 和 RoboTwin C2R 中，设备操作、受约束放置和双臂交互让 VLA primitive 的终止作用更突出。</p>
 
 <p>LIBERO-family 里，很多任务最终是在 analytic transport、release 或 repositioning 后触发完成谓词；RoboCasa365 和 RoboTwin C2R 中，更多任务的最终完成依赖 contact-rich 操作，因此 VLA primitive 终结任务的比例更高。</p>
 <p>这正说明：</p>
