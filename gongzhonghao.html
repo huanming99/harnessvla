@@ -76,9 +76,6 @@
 </ul>
 <p>在这些场景下，端到端 VLA 经常会暴露一个问题：它可能学会了“熟悉轨迹”，但没有稳健地学会“当前任务绑定”。</p>
 <p>论文中 LIBERO-Pro 的可视化例子很直观。在 task-perturbed OBJECT-PRO 中，视觉场景看起来和标准任务很像，但指令已经把目标重定向了；RLinf 这样的 frozen VLA 仍然可能重复标准任务行为。在 swap-perturbed GOAL-PRO 中，物体布局发生变化，VLA 也可能继续朝训练时熟悉的区域移动。</p>
-<p><img alt="LIBERO-Pro 扰动示例" src="wechat_assets/a.png" /></p>
-<p class="fig-caption">图 2：LIBERO-Pro 扰动示例。视觉相似但目标被重定向、布局被交换时，RLinf 容易重复标准行为；Harness VLA 通过 planner 重新 grounding 目标，并在 staging 后调用 VLA ACT。</p>
-
 <p>这说明一个关键问题：</p>
 <blockquote>
 <p><strong>VLA 的 contact skill 很强，但不应该让它独自承担语言理解、目标绑定、空间重定位和长程组合。</strong></p>
@@ -186,7 +183,7 @@
 <p>这样一来，VLA 不需要理解完整长程任务。它只需要在 agent 准备好的局部上下文中，完成自己擅长的 contact-rich 操作。</p>
 <p>这就是 Harness VLA 所谓的 harness：不是改变 VLA 本身，而是改变 VLA 被调用的状态和边界。</p>
 <p><img alt="Harness VLA 路径分解示意图" src="wechat_assets/abstract_figure_wechat.jpg" /></p>
-<p class="fig-caption">图 3：Harness VLA 的路径分解思想。部署扰动会把完整任务推向 OOD，但 planner 可以用 analytic primitives 做感知、移动和 staging，只把局部接触丰富阶段交给 frozen VLA。</p>
+<p class="fig-caption">图 2：Harness VLA 的路径分解思想。部署扰动会把完整任务推向 OOD，但 planner 可以用 analytic primitives 做感知、移动和 staging，只把局部接触丰富阶段交给 frozen VLA。</p>
 
 <p>换句话说：</p>
 <blockquote>
@@ -195,7 +192,7 @@
 <p>从机制上看，agent 通过 semantic re-grounding、pre-contact staging、viewpoint/pose adjustment，把当前目标转化成更适合 VLA 发挥作用的 local observation/contact state。</p>
 <p>这个思路解释了为什么同一个 frozen VLA，在 monolithic rollout 中容易失败，但放进 Harness VLA 里可以跨扰动、跨环境、跨 embodiment 获得更强泛化。</p>
 <p><img alt="接触阶段周围的解析分解" src="wechat_assets/c.png" /></p>
-<p class="fig-caption">图 4：接触丰富阶段周围的 analytic decomposition。VLA ACT 负责抓取、放入等局部接触动作；MOVE TO、RELEASE、NAVIGATE TO 等 primitive 负责检测、重定位、搬运和收尾。</p>
+<p class="fig-caption">图 3：接触丰富阶段周围的 analytic decomposition。VLA ACT 负责抓取、放入等局部接触动作；MOVE TO、RELEASE、NAVIGATE TO 等 primitive 负责检测、重定位、搬运和收尾。</p>
 
 <hr />
 <h2>06. 三大泛化基准上的强结果</h2>
@@ -257,6 +254,9 @@
 <li>只在局部 contact-rich phase 调用 <code>VLA ACT</code>。</li>
 </ul>
 <p>这样，VLA 不再需要自己承担完整语义绑定。它只需要在 planner 给定的局部目标附近执行接触操作。</p>
+<p><img alt="LIBERO-Pro 扰动示例" src="wechat_assets/a.png" /></p>
+<p class="fig-caption">图 4：planner-level semantic re-grounding 的可视化例子。视觉相似但目标被重定向、布局被交换时，RLinf 容易重复标准行为；Harness VLA 通过 planner 重新 grounding 当前目标，再调用 VLA ACT 执行局部接触操作。</p>
+
 <h3>第二，planner-staged VLA invocation</h3>
 <p>Harness VLA 不把 VLA 当成一次性黑盒 controller。每次 <code>VLA ACT</code> 都是 planner 选择的局部 contact attempt，其成败很大程度取决于调用前的 staging。</p>
 <p>planner 可以先用 analytic primitives 调整机器人到更合适的 pre-contact pose，再调用 VLA。如果局部接触状态不理想，agent 可以根据新的 observation 重新定位和调整，再决定下一步。</p>
